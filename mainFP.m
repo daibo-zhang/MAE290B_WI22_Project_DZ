@@ -20,16 +20,17 @@ beta = alpha * dt / (2 * h^2);
 % Define spatial grid
 xBound = [0,1];
 yBound = [0,1];
-[xMesh,yMesh] = meshgrid(...
-    (xBound(1)+h):h:(xBound(2)-h),(yBound(1)+h):h:(yBound(2)-h));
-N = length(xMesh);
+[xMesh,yMesh] = meshgrid(xBound(1):h:xBound(2),yBound(1):h:yBound(2));
+N = length(xMesh) - 2;
 
 % Define discretized initial condition
 icB = 0.01 * sin(pi*xMesh) .* sin(pi*yMesh);
-icVecB = reshape(icB,N*N,1);
+icBi = icB(2:end-1,2:end-1);
+icVecB = reshape(icBi,N*N,1);
 
 % Define source term
 spaceQ = 2.5 * sin(4*pi*xMesh) .* sin(8*pi*yMesh);
+spaceQ = spaceQ(2:end-1,2:end-1);
 spaceQVec = reshape(spaceQ,N*N,1);
 q = @(t) (1 - exp(-a*t) * sin(Omega*t) * cos(2*Omega*t)) * spaceQVec;
 
@@ -61,7 +62,7 @@ fprintf('Solving a random %d-by-%d system. Error = %1.4e \n',...
 %% Part b: simulate to steady state
 
 % Define tolerance for change in solution that defines the steady state
-tol = 1e-4;
+tol = 5e-5;
 
 % Preallocate counter
 nB = 0; 
@@ -72,7 +73,7 @@ pLoc = [find(xBound(1):h:xBound(2)==0.55),...
 
 % Preallocate time and solution output
 tOutB = 0;
-uOutB = appendBC(icB);
+uOutB = icB;
 pointOutB = uOutB(pLoc(1),pLoc(2));
 
 % Initialize a variable that keep track of changes in solution
@@ -112,6 +113,24 @@ end
 
 % Indicate start of part b computation
 disp('Part b steady state solution found');
+
+%% Part b: visualizing results
+
+% Plot time evolution of solution at point
+figure;
+myPlot(tOutB,pointOutB,'Time $t$','Temperature $T$',...
+    {'Temporal Evolution of Temperature','at $x=0.55$, $y=0.45$'},20);
+
+% Plot steady state solution as a contour plot
+figure;
+ssSol = uOutB(:,:,end);
+contourf(xMesh,yMesh,ssSol,'ShowText','on');
+set(gca,'FontSize',20,'TickLabelInterpreter','latex');
+xlabel('$x$','Interpreter','latex');
+ylabel('$y$','Interpreter','latex');
+title({'Steady State Temperature Distribution',...
+    strcat('Obtained at $t$ = ',string(round(tOutB(end),3)))},...
+    'Interpreter','latex');
 
 %% Helper functions
 
